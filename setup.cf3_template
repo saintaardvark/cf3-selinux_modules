@@ -1,0 +1,17 @@
+#!/bin/sh
+# This file is configured by cfengine.  Any local changes will be overwritten!
+#
+# Note that with template files, the variable needs to be referenced
+# like so:
+#
+#	$(bundle_name.variable_name)
+
+# Where to store selinux related files
+SOURCE=/etc/selinux/local
+BUILD=/etc/selinux/local
+
+/usr/bin/checkmodule -M -m -o ${BUILD}/$(add_selinux_module.module).mod ${SOURCE}/$(add_selinux_module.module).te
+/usr/bin/semodule_package -o ${BUILD}/$(add_selinux_module.module).pp -m ${BUILD}/$(add_selinux_module.module).mod
+/usr/sbin/semodule -i ${BUILD}/$(add_selinux_module.module).pp
+
+/bin/rm ${BUILD}/$(add_selinux_module.module).mod ${BUILD}/$(add_selinux_module.module).pp

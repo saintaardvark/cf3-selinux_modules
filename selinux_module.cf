@@ -1,0 +1,41 @@
+# This whole approach copied/ported from the SANS Institute's puppet
+# modules: https://github.com/sansnoc/puppet This implementation, such
+# as it is, is released under the MIT license; see LICENSE.txt for
+# details.
+#
+# Hugh Brown, November 24 2012
+
+bundle agent add_selinux_module(module) {
+   files:
+     centos::
+       "/etc/selinux/local/."
+         comment        => "Create local SELinux directory for modules, etc.",
+         create         => "true",
+         perms          => mog("700", "root", "root");
+
+       "/etc/selinux/local/$(module).te"
+         comment        => "Copy over module source.",
+         copy_from      => secure_cp("$(g.masterfiles)/centos/5/etc/selinux/local/$(module).te", "$(g.masterserver)"),
+         perms          => mog("440", "root", "root"),
+         classes        => if_repaired("rebuild_$(module)");
+
+       "/etc/selinux/local/setup.cf3_template"
+         comment        => "Copy over module source.",
+         copy_from      => secure_cp("$(g.masterfiles)/centos/5/etc/selinux/local/setup.cf3_template", "$(g.masterserver)"),
+         perms          => mog("750", "root", "root"),
+         classes        => if_repaired("rebuild_$(module)");
+
+       "/etc/selinux/local/$(module)-setup.sh"
+         comment        => "Create setup script. FIXME: This was easily done in one step in Puppet, and may be stupid for Cf3.",
+         create         => "true",
+         edit_line      => expand_template("/etc/selinux/local/setup.cf3_template"),
+         perms          => mog("750", "root", "root"),
+         edit_defaults  => empty,
+         classes        => if_repaired("rebuild_$(module)");
+
+  commands:
+    centos::
+      "/etc/selinux/local/$(module)-setup.sh"
+        comment         => "Actually rebuild module.",
+        ifvarclass      => canonify("rebuild_$(module)");
+}
